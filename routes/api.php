@@ -2,8 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\EventController;
-use App\Http\Controllers\TicketCategoryController;
+use App\Http\Controllers\Api\EventController;
 
 // Rute autentikasi
 Route::post('/register', [AuthController::class, 'register']);
@@ -21,9 +20,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Manajemen Event
         Route::apiResource('/events', EventController::class);
-
-        // Manajemen Tiket (Kategori Tiket)
-        Route::apiResource('/tickets', TicketCategoryController::class);
     });
 
     // Rute khusus User
