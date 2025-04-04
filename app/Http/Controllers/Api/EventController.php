@@ -6,13 +6,12 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Event;
 use App\Http\Resources\PostResource;
+
 class EventController extends Controller
 {
     /**
-     * index
-     * @return void
+     * Menampilkan daftar event.
      */
-
     public function index()
     {
         $events = Event::all();
@@ -20,18 +19,16 @@ class EventController extends Controller
     }
 
     /**
-     * store
-     * @param  Request $request
-     * @return void
+     * Membuat event baru.
      */
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'location' => 'required|string|max:255',
+            'name'           => 'required|string|max:255',
+            'description'    => 'nullable|string',
+            'location'       => 'required|string|max:255',
             'event_datetime' => 'required|date',
-            'image' => 'nullable|image|max:2048',
+            'image'          => 'nullable|image|max:2048',
         ]);
 
         if ($request->hasFile('image')) {
@@ -42,25 +39,23 @@ class EventController extends Controller
 
         return new PostResource(true, 'Event Created Successfully', $event);
     }
+
     /**
-     * show
-     * @param  int $id
-     * @return void
+     * Menampilkan detail event beserta daftar kategori tiket terkait.
      */
-    public function show($id)   
+    public function show($id)
     {
-        $event = Event::find($id);
+        // Gunakan eager loading untuk mendapatkan ticketCategories
+        $event = Event::with('ticketCategories')->find($id);
         if (!$event) {
             return new PostResource(false, 'Event not found', null);
         }
 
         return new PostResource(true, 'Event Details', $event);
     }
+
     /**
-     * update
-     * @param  Request $request
-     * @param  int $id
-     * @return void
+     * Mengupdate data event.
      */
     public function update(Request $request, $id)
     {
@@ -70,11 +65,11 @@ class EventController extends Controller
         }
 
         $request->validate([
-            'name' => 'sometimes|string|max:255',
-            'description' => 'nullable|string',
-            'location' => 'sometimes|string|max:255',
+            'name'           => 'sometimes|string|max:255',
+            'description'    => 'nullable|string',
+            'location'       => 'sometimes|string|max:255',
             'event_datetime' => 'sometimes|date',
-            'image' => 'nullable|image|max:2048',
+            'image'          => 'nullable|image|max:2048',
         ]);
 
         if ($request->hasFile('image')) {
@@ -85,10 +80,9 @@ class EventController extends Controller
 
         return new PostResource(true, 'Event Updated Successfully', $event);
     }
+
     /**
-     * destroy
-     * @param  int $id
-     * @return void
+     * Menghapus event.
      */
     public function destroy($id)
     {
@@ -101,10 +95,9 @@ class EventController extends Controller
 
         return new PostResource(true, 'Event Deleted Successfully', null);
     }
+
     /**
-     * search
-     * @param  Request $request
-     * @return void
+     * Mencari event berdasarkan nama atau deskripsi.
      */
     public function search(Request $request)
     {
