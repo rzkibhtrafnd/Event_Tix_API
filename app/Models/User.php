@@ -16,6 +16,8 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'otp',
+        'otp_expires_at',
     ];
 
     protected $hidden = [

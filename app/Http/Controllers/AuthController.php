@@ -40,23 +40,68 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'email'    => 'required|string|email',
-            'password' => 'required|string',
+            'email'    => 'required|email',
+            'password' => 'required'
         ]);
-
-        if (!Auth::attempt($request->only('email', 'password'))) {
+    
+        $user = User::where('email', $request->email)->first();
+    
+        if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json(['message' => 'Invalid credentials'], 401);
         }
+    
+        // Generate OTP (misal 6 digit) dan simpan ke database
+        $otp = rand(100000, 999999);
+        $user->update([
+            'otp' => $otp,
+            'otp_expires_at' => now()->addMinutes(5)
+        ]);
+    
+        // Kirim OTP via email menggunakan notifikasi atau Mail facade
+        \Mail::raw("Kode OTP Anda adalah: {$otp}. Kode ini berlaku selama 5 menit.", function($message) use ($user) {
+            $message->to($user->email)
+                    ->subject('Verifikasi OTP untuk Login');
+        });
+    
+        return response()->json([
+            'message' => 'OTP telah dikirim ke email Anda. Silahkan masukkan OTP untuk verifikasi.'
+        ]);
+    }
+    
+    // Verify OTP
+    public function verifyOtp(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'otp'   => 'required|digits:6'
+        ]);
 
-        $user = Auth::user();
+        $user = User::where('email', $request->email)->first();
+        if (!$user) {
+            return response()->json(['message' => 'User tidak ditemukan'], 404);
+        }
+
+        // Cek OTP dan waktu kadaluarsa
+        if ($user->otp !== $request->otp || now()->greaterThan($user->otp_expires_at)) {
+            return response()->json(['message' => 'OTP salah atau sudah kadaluarsa'], 401);
+        }
+
+        // Hapus OTP dan waktu kadaluarsa setelah verifikasi
+        $user->update([
+            'otp' => null,
+            'otp_expires_at' => null
+        ]);
+
+        // Buat token (misalnya menggunakan Sanctum)
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
-            'message' => 'Login successful',
-            'user'    => $user,
+            'message' => 'Login berhasil',
             'token'   => $token,
+            'user'    => $user
         ]);
     }
+
 
     // Logout
     public function logout(Request $request)
